@@ -1,16 +1,17 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import DemoWorkspace from './DemoWorkspace';
-import { useRecorder } from '@/hooks/useRecorder';
-import { formatTime } from '@/lib/utils';
+import Link from "next/link";
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import DemoWorkspace from "./DemoWorkspace";
+import { useRecorder } from "@/hooks/useRecorder";
+import { formatTime } from "@/lib/utils";
 
 export default function Recorder() {
   const router = useRouter();
   const workspaceRef = useRef(null);
-  const { isRecording, eventCount, elapsed, start, stop, cancel } = useRecorder(workspaceRef);
+  const { isRecording, eventCount, elapsed, start, stop, cancel } =
+    useRecorder(workspaceRef);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
@@ -22,16 +23,18 @@ export default function Recorder() {
   const handleStop = async () => {
     const { events, duration } = stop();
     if (!events.length) {
-      setError('No interactions captured. Try moving your mouse over the workspace.');
+      setError(
+        "No interactions captured. Try moving your mouse over the workspace.",
+      );
       return;
     }
 
     const rect = workspaceRef.current?.getBoundingClientRect();
     setSaving(true);
     try {
-      const res = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           events,
           duration,
@@ -42,13 +45,16 @@ export default function Recorder() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to save session');
+        throw new Error(data.error || "Failed to save session");
       }
 
       const data = await res.json();
-      router.push(`/replay?session=${data.session.id}`);
+      router.push(`/replay?session=${data.id}`);
     } catch (err) {
-      setError(err.message || 'Something went wrong');
+      if (!data?.id) {
+        throw new Error("No session ID returned");
+      }
+      setError(err.message || "Something went wrong");
       setSaving(false);
     }
   };
@@ -62,7 +68,9 @@ export default function Recorder() {
               <div className="w-2 h-2 rounded-full bg-white" />
             </div>
             <div className="font-semibold tracking-tight">UI Replay</div>
-            <div className="ml-2 text-[10px] uppercase tracking-wider text-zinc-500 px-1.5 py-0.5 rounded border border-zinc-800">v1</div>
+            <div className="ml-2 text-[10px] uppercase tracking-wider text-zinc-500 px-1.5 py-0.5 rounded border border-zinc-800">
+              v1
+            </div>
           </div>
           <Link
             href="/replay"
@@ -79,8 +87,9 @@ export default function Recorder() {
             Record a session
           </h1>
           <p className="text-zinc-400 text-sm leading-relaxed max-w-xl">
-            Press start, then interact with the workspace below. Mouse movement, clicks, scrolls and typing
-            are captured with timestamps and replayed with insights.
+            Press start, then interact with the workspace below. Mouse movement,
+            clicks, scrolls and typing are captured with timestamps and replayed
+            with insights.
           </p>
         </div>
 
@@ -112,7 +121,9 @@ export default function Recorder() {
               <div className="ml-2 flex items-center gap-3 text-xs text-zinc-400">
                 <div className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse-ring" />
-                  <span className="font-mono text-zinc-200">{formatTime(elapsed)}</span>
+                  <span className="font-mono text-zinc-200">
+                    {formatTime(elapsed)}
+                  </span>
                 </div>
                 <div className="text-zinc-600">·</div>
                 <div className="font-mono">{eventCount} events</div>
@@ -138,8 +149,8 @@ export default function Recorder() {
           ref={workspaceRef}
           className={`relative rounded-2xl border overflow-hidden transition-all ${
             isRecording
-              ? 'border-violet-500/40 shadow-[0_0_0_1px_rgba(139,92,246,0.15),0_30px_80px_-20px_rgba(139,92,246,0.25)]'
-              : 'border-zinc-800/80 shadow-2xl shadow-black/40'
+              ? "border-violet-500/40 shadow-[0_0_0_1px_rgba(139,92,246,0.15),0_30px_80px_-20px_rgba(139,92,246,0.25)]"
+              : "border-zinc-800/80 shadow-2xl shadow-black/40"
           }`}
         >
           {isRecording && (
@@ -153,12 +164,23 @@ export default function Recorder() {
 
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           {[
-            { label: 'Throttled capture', desc: '~30fps mouse sampling' },
-            { label: 'High-fidelity replay', desc: 'Interpolated cursor & ripples' },
-            { label: 'Insights engine', desc: 'Heatmap, idle time, repeated clicks' },
+            { label: "Throttled capture", desc: "~30fps mouse sampling" },
+            {
+              label: "High-fidelity replay",
+              desc: "Interpolated cursor & ripples",
+            },
+            {
+              label: "Insights engine",
+              desc: "Heatmap, idle time, repeated clicks",
+            },
           ].map((item) => (
-            <div key={item.label} className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-3.5">
-              <div className="text-zinc-200 font-medium mb-0.5">{item.label}</div>
+            <div
+              key={item.label}
+              className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-3.5"
+            >
+              <div className="text-zinc-200 font-medium mb-0.5">
+                {item.label}
+              </div>
               <div className="text-zinc-500">{item.desc}</div>
             </div>
           ))}

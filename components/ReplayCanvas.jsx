@@ -16,14 +16,20 @@ export default function ReplayCanvas({
   const [size, setSize] = useState({ w: 1, h: 1 });
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    let el = containerRef.current;
+    if (!el) return;
+
     const update = () => {
-      const rect = containerRef.current.getBoundingClientRect();
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
       setSize({ w: rect.width, h: rect.height });
     };
+
     update();
+
     const observer = new ResizeObserver(update);
-    observer.observe(containerRef.current);
+    observer.observe(el);
+
     return () => observer.disconnect();
   }, []);
 

@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import SessionList from './SessionList';
-import ReplayCanvas from './ReplayCanvas';
-import Timeline from './Timeline';
-import PlaybackControls from './PlaybackControls';
-import InsightsPanel from './InsightsPanel';
-import { useReplay } from '@/hooks/useReplay';
+import Link from "next/link";
+import { useEffect, useState, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import SessionList from "./SessionList";
+import ReplayCanvas from "./ReplayCanvas";
+import Timeline from "./Timeline";
+import PlaybackControls from "./PlaybackControls";
+import InsightsPanel from "./InsightsPanel";
+import { useReplay } from "@/hooks/useReplay";
 
 export default function ReplayPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get('session');
+  const sessionId = searchParams.get("session");
 
   const [sessions, setSessions] = useState([]);
   const [listLoading, setListLoading] = useState(true);
@@ -25,9 +25,9 @@ export default function ReplayPage() {
   const loadSessions = useCallback(async () => {
     setListLoading(true);
     try {
-      const res = await fetch('/api/sessions', { cache: 'no-store' });
+      const res = await fetch("/api/sessions", { cache: "no-store" });
       const data = await res.json();
-      setSessions(data.sessions || []);
+      setSessions(data);
     } catch {
       setSessions([]);
     } finally {
@@ -46,10 +46,10 @@ export default function ReplayPage() {
     }
     let cancelled = false;
     setActiveLoading(true);
-    fetch(`/api/sessions/${sessionId}`, { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('not found'))))
+    fetch(`/api/sessions/${sessionId}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("not found"))))
       .then((data) => {
-        if (!cancelled) setActiveSession(data.session);
+        if (!cancelled) setActiveSession(data);
       })
       .catch(() => {
         if (!cancelled) setActiveSession(null);
@@ -73,12 +73,12 @@ export default function ReplayPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this session?')) return;
+    if (!confirm("Delete this session?")) return;
     try {
-      await fetch(`/api/sessions/${id}`, { method: 'DELETE' });
+      await fetch(`/api/sessions/${id}`, { method: "DELETE" });
     } catch {}
     if (id === sessionId) {
-      router.replace('/replay');
+      router.replace("/replay");
       setActiveSession(null);
     }
     loadSessions();

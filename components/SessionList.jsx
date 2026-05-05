@@ -1,15 +1,23 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { formatDuration, formatRelativeTime } from '@/lib/utils';
+import Link from "next/link";
+import { formatDuration, formatRelativeTime } from "@/lib/utils";
 
-export default function SessionList({ sessions, activeId, onSelect, onDelete, loading }) {
+export default function SessionList({
+  sessions,
+  activeId,
+  onSelect,
+  onDelete,
+  loading,
+}) {
   return (
     <aside className="border-r border-zinc-800/60 bg-zinc-950/40 flex flex-col h-full">
       <div className="px-4 h-12 flex items-center justify-between border-b border-zinc-800/60">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-zinc-200">Sessions</span>
-          <span className="text-[11px] text-zinc-500 font-mono">{sessions.length}</span>
+          <span className="text-[11px] text-zinc-500 font-mono">
+            {sessions.length}
+          </span>
         </div>
         <Link
           href="/"
@@ -20,9 +28,7 @@ export default function SessionList({ sessions, activeId, onSelect, onDelete, lo
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {loading && (
-          <div className="p-4 text-xs text-zinc-500">Loading…</div>
-        )}
+        {loading && <div className="p-4 text-xs text-zinc-500">Loading…</div>}
 
         {!loading && sessions.length === 0 && (
           <div className="p-4">
@@ -42,20 +48,22 @@ export default function SessionList({ sessions, activeId, onSelect, onDelete, lo
               tabIndex={0}
               onClick={() => onSelect(s.id)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   onSelect(s.id);
                 }
               }}
               className={`group relative px-4 py-3 cursor-pointer border-l-2 transition-colors ${
                 isActive
-                  ? 'border-violet-500 bg-violet-500/8'
-                  : 'border-transparent hover:bg-zinc-900/50'
+                  ? "border-violet-500 bg-violet-500/8"
+                  : "border-transparent hover:bg-zinc-900/50"
               }`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <div className={`text-xs font-mono truncate ${isActive ? 'text-violet-200' : 'text-zinc-300'}`}>
+                  <div
+                    className={`text-xs font-mono truncate ${isActive ? "text-violet-200" : "text-zinc-300"}`}
+                  >
                     {s.id}
                   </div>
                   <div className="mt-1 flex items-center gap-2 text-[11px] text-zinc-500">
@@ -64,7 +72,7 @@ export default function SessionList({ sessions, activeId, onSelect, onDelete, lo
                     <span>{s.eventCount ?? 0} events</span>
                   </div>
                   <div className="mt-0.5 text-[11px] text-zinc-600">
-                    {formatRelativeTime(s.createdAt)}
+                    {formatRelativeTime(s.created_at)}
                   </div>
                 </div>
 
@@ -76,7 +84,7 @@ export default function SessionList({ sessions, activeId, onSelect, onDelete, lo
                     onDelete(s.id);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+                    if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
                       e.stopPropagation();
                       onDelete(s.id);

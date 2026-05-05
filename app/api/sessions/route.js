@@ -1,63 +1,51 @@
 import { NextResponse } from "next/server";
 import { listSessions, saveSession } from "@/lib/db";
+import supabase from "@/lib/supabase";
 
 export async function GET() {
-  try {
-    const sessions = await listSessions();
-    return NextResponse.json({ sessions });
-  } catch (err) {
-    console.error("[api/sessions] GET failed:", err);
-    return NextResponse.json(
-      { error: err.message || "Failed to list sessions" },
-      { status: 500 },
-    );
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return Response.json([]);
   }
+
+  return Response.json(
+    data.map((s) => ({
+      id: s.id,
+      createdAt: s.created_at,
+      duration: s.duration,
+      width: s.width,
+      height: s.height,
+      eventCount: Array.isArray(s.events) ? s.events.length : 0,
+    })),
+  );
 }
 
-export async function POST(request) {
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+export async function POST(req) {
+  const session = await req.json();
 
-  const events = Array.isArray(body.events) ? body.events : [];
-  if (events.length === 0) {
-    return NextResponse.json({ error: "No events to save" }, { status: 400 });
-  }
-
-  const id = `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-
-  const session = {
-    id,
-    createdAt: Date.now(),
-    duration: Number(body.duration) || 0,
-    width: Number(body.width) || 0,
-    height: Number(body.height) || 0,
-    events,
+  const newSession = {
+    ...session,
+    id: session.id || crypto.randomUUID(), // generate id
+    created_at: new Date().toISOString(), // always give date
+    duration: Math.round(session.duration),
+    width: Math.round(session.width),
+    height: Math.round(session.height),
   };
 
-  try {
-    await saveSession(session);
-  } catch (err) {
-    console.error("[api/sessions] saveSession failed:", err);
-    return NextResponse.json(
-      {
-        error:
-          `Could not write session: ${err.code || ""} ${err.message || "unknown error"}`.trim(),
-      },
-      { status: 500 },
-    );
+  const { error } = await supabase.from("sessions").insert([newSession]);
+
+  if (error) {
+    console.error(error);
+    return Response.json({ error: "Failed" }, { status: 500 });
   }
 
-  return NextResponse.json({
-    session: {
-      id: session.id,
-      createdAt: session.createdAt,
-      duration: session.duration,
-      eventCount: events.length,
-    },
+  return Response.json({
+    id: newSession.id,
   });
 }
 
