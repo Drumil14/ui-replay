@@ -1,9 +1,17 @@
-import { NextResponse } from 'next/server';
-import { listSessions, saveSession } from '@/lib/db';
+import { NextResponse } from "next/server";
+import { listSessions, saveSession } from "@/lib/db";
 
 export async function GET() {
-  const sessions = await listSessions();
-  return NextResponse.json({ sessions });
+  try {
+    const sessions = await listSessions();
+    return NextResponse.json({ sessions });
+  } catch (err) {
+    console.error("[api/sessions] GET failed:", err);
+    return NextResponse.json(
+      { error: err.message || "Failed to list sessions" },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(request) {
@@ -11,12 +19,12 @@ export async function POST(request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
   const events = Array.isArray(body.events) ? body.events : [];
   if (events.length === 0) {
-    return NextResponse.json({ error: 'No events to save' }, { status: 400 });
+    return NextResponse.json({ error: "No events to save" }, { status: 400 });
   }
 
   const id = `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -30,7 +38,18 @@ export async function POST(request) {
     events,
   };
 
-  await saveSession(session);
+  try {
+    await saveSession(session);
+  } catch (err) {
+    console.error("[api/sessions] saveSession failed:", err);
+    return NextResponse.json(
+      {
+        error:
+          `Could not write session: ${err.code || ""} ${err.message || "unknown error"}`.trim(),
+      },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({
     session: {
@@ -42,4 +61,4 @@ export async function POST(request) {
   });
 }
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";

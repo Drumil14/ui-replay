@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { findLastIndexAtTime, shallowEqual } from '@/lib/utils';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { findLastIndexAtTime, shallowEqual } from "@/lib/utils";
 
 const CLICK_LIFETIME_MS = 800;
 
@@ -36,10 +36,10 @@ export function useReplay(session) {
     const inputEvents = [];
     if (session?.events) {
       for (const event of session.events) {
-        if (event.type === 'move') moves.push(event);
-        else if (event.type === 'click') clicks.push(event);
-        else if (event.type === 'scroll') scrolls.push(event);
-        else if (event.type === 'input') inputEvents.push(event);
+        if (event.type === "move") moves.push(event);
+        else if (event.type === "click") clicks.push(event);
+        else if (event.type === "scroll") scrolls.push(event);
+        else if (event.type === "input") inputEvents.push(event);
       }
     }
     return { moves, clicks, scrolls, inputEvents };
@@ -58,7 +58,10 @@ export function useReplay(session) {
         const next = moves[moveIdx + 1];
         if (next && next.timestamp - last.timestamp < 1000) {
           const span = next.timestamp - last.timestamp;
-          const progress = span > 0 ? Math.min(1, Math.max(0, (t - last.timestamp) / span)) : 0;
+          const progress =
+            span > 0
+              ? Math.min(1, Math.max(0, (t - last.timestamp) / span))
+              : 0;
           nextCursor = {
             x: last.x + (next.x - last.x) * progress,
             y: last.y + (next.y - last.y) * progress,
@@ -72,13 +75,63 @@ export function useReplay(session) {
       const scrollIdx = findLastIndexAtTime(scrolls, t);
       const nextScroll = scrollIdx >= 0 ? scrolls[scrollIdx].y : 0;
 
+      const clickIdx = findLastIndexAtTime(clicks, t);
+
+      let nextFilter = "all";
+      let lastAddTaskTime = -1;
+      const addedTasks = [];
+      for (let i = 0; i <= clickIdx; i++) {
+        const v = clicks[i].value;
+        if (v && v.startsWith("Filter: ")) {
+          const part = v.slice("Filter: ".length);
+          nextFilter = part === "All" ? "all" : part;
+        } else if (v === "Add task") {
+          let valAtClick = "";
+          for (let k = inputEvents.length - 1; k >= 0; k--) {
+            const ie = inputEvents[k];
+            if (ie.timestamp > clicks[i].timestamp) continue;
+            if (ie.timestamp <= lastAddTaskTime) break;
+            if (ie.fieldId === "new-task") {
+              valAtClick = ie.value;
+              break;
+            }
+          }
+          if (valAtClick.trim()) {
+            addedTasks.push({
+              id: `r_${i}`,
+              title: valAtClick.trim(),
+              status: "Todo",
+              tag: "New",
+              priority: "Medium",
+            });
+          }
+          lastAddTaskTime = clicks[i].timestamp;
+        }
+      }
+
       const nextInputs = {};
       const inputIdx = findLastIndexAtTime(inputEvents, t);
       for (let i = 0; i <= inputIdx; i++) {
         nextInputs[inputEvents[i].fieldId] = inputEvents[i].value;
       }
 
-      const clickIdx = findLastIndexAtTime(clicks, t);
+      if (lastAddTaskTime >= 0) {
+        let resetValue = "";
+        for (let k = inputEvents.length - 1; k >= 0; k--) {
+          const ie = inputEvents[k];
+          if (ie.timestamp > t) continue;
+          if (ie.timestamp <= lastAddTaskTime) break;
+          if (ie.fieldId === "new-task") {
+            resetValue = ie.value;
+            break;
+          }
+        }
+        nextInputs["new-task"] = resetValue;
+      }
+
+      nextInputs.__filter = nextFilter;
+      nextInputs.__addedTasks = addedTasks;
+
       const nextClicks = [];
       for (let i = clickIdx; i >= 0; i--) {
         const age = t - clicks[i].timestamp;
@@ -103,7 +156,21 @@ export function useReplay(session) {
         setScrollY(nextScroll);
       }
 
-      if (!shallowEqual(inputsRef.current, nextInputs)) {
+      const prevInputs = inputsRef.current;
+      const prevTasks = prevInputs.__addedTasks || [];
+      const tasksEqual =
+        prevTasks.length === addedTasks.length &&
+        prevTasks.every((tk, i) => tk.title === addedTasks[i].title);
+      const otherEqual =
+        prevInputs.__filter === nextInputs.__filter &&
+        Object.keys(nextInputs)
+          .filter((k) => k !== "__addedTasks")
+          .every((k) => prevInputs[k] === nextInputs[k]) &&
+        Object.keys(prevInputs)
+          .filter((k) => k !== "__addedTasks")
+          .every((k) => prevInputs[k] === nextInputs[k]);
+
+      if (!tasksEqual || !otherEqual) {
         inputsRef.current = nextInputs;
         setInputs(nextInputs);
       }
@@ -123,7 +190,7 @@ export function useReplay(session) {
         setActiveClicks(nextClicks);
       }
     },
-    [sorted]
+    [sorted],
   );
 
   const seek = useCallback(
@@ -133,7 +200,7 @@ export function useReplay(session) {
       setCurrentTime(clamped);
       applyState(clamped);
     },
-    [applyState, duration]
+    [applyState, duration],
   );
 
   useEffect(() => {
