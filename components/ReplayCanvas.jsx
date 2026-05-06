@@ -10,6 +10,7 @@ export default function ReplayCanvas({
   activeClicks,
   scrollY,
   inputs,
+  currentPath = "/",
 }) {
   const containerRef = useRef(null);
   const scrollRef = useRef(null);
@@ -104,7 +105,11 @@ export default function ReplayCanvas({
               left: 0,
             }}
           >
-            <DemoWorkspace readOnly inputValues={inputs} />
+            {currentPath === "/todo" ? (
+              <div className="p-6 text-white">Todo Page (Replay)</div>
+            ) : (
+              <DemoWorkspace readOnly inputValues={inputs} />
+            )}
 
             {activeClicks.map((click, i) => (
               <ClickEffect

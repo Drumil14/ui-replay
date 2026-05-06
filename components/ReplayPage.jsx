@@ -131,6 +131,7 @@ export default function ReplayPage() {
               activeClicks={replay.activeClicks}
               scrollY={replay.scrollY}
               inputs={replay.inputs}
+              currentPath={replay.currentPath}
             />
           </div>
 

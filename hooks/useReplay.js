@@ -9,6 +9,7 @@ export function useReplay(session) {
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
+  const [currentPath, setCurrentPath] = useState("/");
 
   const [cursor, setCursor] = useState({ x: 0, y: 0, visible: false });
   const [activeClicks, setActiveClicks] = useState([]);
@@ -24,6 +25,7 @@ export function useReplay(session) {
   const scrollRef = useRef(0);
   const inputsRef = useRef({});
   const clicksRef = useRef([]);
+  const currentPathRef = useRef("/");
 
   useEffect(() => {
     speedRef.current = speed;
@@ -34,22 +36,24 @@ export function useReplay(session) {
     const clicks = [];
     const scrolls = [];
     const inputEvents = [];
+    const navigations = [];
     if (session?.events) {
       for (const event of session.events) {
         if (event.type === "move") moves.push(event);
         else if (event.type === "click") clicks.push(event);
         else if (event.type === "scroll") scrolls.push(event);
         else if (event.type === "input") inputEvents.push(event);
+        else if (event.type === "navigation") navigations.push(event);
       }
     }
-    return { moves, clicks, scrolls, inputEvents };
+    return { moves, clicks, scrolls, inputEvents, navigations };
   }, [session]);
 
   const duration = session?.duration || 0;
 
   const applyState = useCallback(
     (t) => {
-      const { moves, clicks, scrolls, inputEvents } = sorted;
+      const { moves, clicks, scrolls, inputEvents, navigations } = sorted;
 
       let nextCursor = { x: 0, y: 0, visible: false };
       const moveIdx = findLastIndexAtTime(moves, t);
@@ -74,6 +78,12 @@ export function useReplay(session) {
 
       const scrollIdx = findLastIndexAtTime(scrolls, t);
       const nextScroll = scrollIdx >= 0 ? scrolls[scrollIdx].y : 0;
+      const navIdx = findLastIndexAtTime(navigations, t);
+      const nextPath = navIdx >= 0 ? navigations[navIdx].path : "/";
+      if (currentPathRef.current !== nextPath) {
+        currentPathRef.current = nextPath;
+        setCurrentPath(nextPath);
+      }
 
       const clickIdx = findLastIndexAtTime(clicks, t);
 
@@ -250,11 +260,13 @@ export function useReplay(session) {
     scrollRef.current = 0;
     inputsRef.current = {};
     clicksRef.current = [];
+    currentPathRef.current = "/";
     setCurrentTime(0);
     setCursor({ x: 0, y: 0, visible: false });
     setScrollY(0);
     setInputs({});
     setActiveClicks([]);
+    setCurrentPath("/");
     setIsPlaying(false);
   }, [session?.id]);
 
@@ -282,6 +294,7 @@ export function useReplay(session) {
     isPlaying,
     speed,
     cursor,
+    currentPath,
     activeClicks,
     scrollY,
     inputs,
